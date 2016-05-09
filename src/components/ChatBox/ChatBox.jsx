@@ -1,11 +1,9 @@
 var React = require('react'),
     ReactDOM = require('react-dom'),
-    ChatMessageInput = require('./ChatMessageInput.jsx');
+    ChatMessageInput = require('./ChatMessageInput.jsx'),
+    ChatMessageList = require('./ChatMessageList.jsx');
 
 var socket = io();
-socket.on('chat message', function (msg) {
-    $('#chat-message-input').after($('<p>').text('[' + msg.date + '] - ' + msg.author + ': ' + msg.message));
-});
 
 function messageSend() {
     var author = $('#author');
@@ -22,6 +20,9 @@ function messageSend() {
 }
 
 var ChatBox = React.createClass({
+    getInitialState: function () {
+        return {items: [], date: '', author: '', message: ''};
+    },
     componentDidMount: function () {
         var messageArea = $('#messageArea');
         messageArea.countRemainingChars({
@@ -44,13 +45,23 @@ var ChatBox = React.createClass({
                 messageSend();
             }
         });
+
+        var component = this;
+        socket.on('chat message', function (msg) {
+            var nextItems = component.state.items;
+            nextItems.unshift(msg);
+            component.setState({items: nextItems});
+        });
     },
     handleMessageSend: function (e) {
         messageSend()
     },
     render: function () {
         return (
-            <ChatMessageInput onClick={this.handleMessageSend}/>
+            <div>
+                <ChatMessageInput onClick={this.handleMessageSend}/>
+                <ChatMessageList items={this.state.items}/>
+            </div>
         );
     }
 });
